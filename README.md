@@ -3,7 +3,7 @@
 # 注意
 这个程序只适用于Nvidia jetson盒子，并且在使用之前需要进行编译。
 # 效果展示
-略
+见https://www.bilibili.com/video/BV1Xh41187tQ?from=search&seid=15658977398405425191
 # 使用教程
 【step1】生成程序需要用到的两个文件，一个是tensorRT要用的.engine文件，一个是libmyplugins.so文件，这两个文件可以从这个项目中生成：https://github.com/wang-xinyu/tensorrtx/tree/master/yolov5
 
