@@ -146,8 +146,8 @@ tiler_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
     boat_Front_chuanti_frames boat_Front_chuanti_queding;
     //g_print("struct_x1:%f",boat_Front_chuanti_queding[0].x1);
     //初始化进船出船数
-    int out_counts;
-    int into_counts;
+    int downward_counts;
+    int upward_counts;
     int Front_frame_det_number;// 记录前一帧中检测框的数量
     int det_boxe_number;
 
@@ -166,8 +166,12 @@ tiler_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
         NvDsFrameMeta *frame_meta = (NvDsFrameMeta *) (l_frame->data);
         //获取图片的宽和高，并且设置计数线的位置
         guint x_coord,y_coord,jishu_line;
-        x_coord = frame_meta -> source_frame_width;
-        y_coord = frame_meta -> source_frame_height;
+        x_coord = 1920;
+        y_coord = 1080;
+        //x_coord = frame_meta -> source_frame_width;
+        //y_coord = frame_meta -> source_frame_height;
+        //g_print("x_coord:%d",x_coord);
+        //g_print("y_coord:%d",y_coord);
         //g_print("frame_width:%d frame_height:%d \n",x_coord,y_coord);
         jishu_line = x_coord/6;
 
@@ -182,48 +186,52 @@ tiler_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
               //g_print("struct_x1:%f \n",Front_det_boxes[199].x1);
               //获取检测框的坐标信息
               obj_meta = (NvDsObjectMeta *) (l_obj->data);
-              NvDsComp_BboxInfo boxInfo;
-              boxInfo = obj_meta->detector_bbox_info;
-              NvBbox_Coords box_Coord;
-              box_Coord = boxInfo.org_bbox_coords;
-              float left,top,width,height;
-              left = box_Coord.left;top = box_Coord.top;width = box_Coord.width;height = box_Coord.height;
-              //g_print("xywh:(%f,%f,%f,%f) \n",left,top,width,height);
-              xyxy det_boxe = xywh2xyxy(left,top,width,height);
-              //g_print("det_boxe:(%f,%f,%f,%f) \n",det_boxe.x1,det_boxe.y1,det_boxe.x2,det_boxe.y2);
-              //获取框的中心点坐标
-              float x,y;
-              x=(det_boxe.x1+det_boxe.x2)/2;
-              y=(det_boxe.y1+det_boxe.y2)/2;
-
-              linshi_data ss={0};
-
-              if (x < jishu_line)
+              if (obj_meta->class_id == 2) //2为车
               {
-                //g_print("forward right \n");
-                ss.x1 = det_boxe.x1;
-                ss.y1 = det_boxe.y1;
-                ss.x2 = det_boxe.x2;
-                ss.y2 = det_boxe.y2;
-                ss.direction = 0; //代表向右
-                ss.center_coord[0] = x;
-                ss.center_coord[1] = y;
-                ss.center_coord_length = 2;
-              }
-              else 
-              {
-                //g_print("forward left \n");
-                ss.x1 = det_boxe.x1;
-                ss.y1 = det_boxe.y1;
-                ss.x2 = det_boxe.x2;
-                ss.y2 = det_boxe.y2;
-                ss.direction = 1; //代表向左
-                ss.center_coord[0] = x;
-                ss.center_coord[1] = y;
-                ss.center_coord_length = 2;
-              }
-            Front_det_boxes[det_boxe_number] = ss;
-            det_boxe_number = det_boxe_number + 1;
+                g_print("obj_meta:%d \n",obj_meta->class_id);
+                NvDsComp_BboxInfo boxInfo;
+                boxInfo = obj_meta->detector_bbox_info;
+                NvBbox_Coords box_Coord;
+                box_Coord = boxInfo.org_bbox_coords;
+                float left,top,width,height;
+                left = box_Coord.left;top = box_Coord.top;width = box_Coord.width;height = box_Coord.height;
+                //g_print("xywh:(%f,%f,%f,%f) \n",left,top,width,height);
+                xyxy det_boxe = xywh2xyxy(left,top,width,height);
+                //g_print("det_boxe:(%f,%f,%f,%f) \n",det_boxe.x1,det_boxe.y1,det_boxe.x2,det_boxe.y2);
+                //获取框的中心点坐标
+                float x,y;
+                x=(det_boxe.x1+det_boxe.x2)/2;
+                y=(det_boxe.y1+det_boxe.y2)/2;
+
+                linshi_data ss={0};
+
+                if (y < jishu_line)
+                {
+                  //g_print("forward right \n");
+                  ss.x1 = det_boxe.x1;
+                  ss.y1 = det_boxe.y1;
+                  ss.x2 = det_boxe.x2;
+                  ss.y2 = det_boxe.y2;
+                  ss.direction = 0; //代表向下
+                  ss.center_coord[0] = x;
+                  ss.center_coord[1] = y;
+                  ss.center_coord_length = 2;
+                }
+                else 
+                {
+                  //g_print("forward left \n");
+                  ss.x1 = det_boxe.x1;
+                  ss.y1 = det_boxe.y1;
+                  ss.x2 = det_boxe.x2;
+                  ss.y2 = det_boxe.y2;
+                  ss.direction = 1; //代表向上
+                  ss.center_coord[0] = x;
+                  ss.center_coord[1] = y;
+                  ss.center_coord_length = 2;
+                }
+              Front_det_boxes[det_boxe_number] = ss;
+              det_boxe_number = det_boxe_number + 1;
+              }   
           }
         }
         else
@@ -233,112 +241,117 @@ tiler_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
           {
             //获取检测框的坐标信息
             obj_meta = (NvDsObjectMeta *) (l_obj->data);
-            NvDsComp_BboxInfo boxInfo;
-            boxInfo = obj_meta->detector_bbox_info;
-            NvBbox_Coords box_Coord;
-            box_Coord = boxInfo.org_bbox_coords;
-            float left,top,width,height;
-            left = box_Coord.left;top = box_Coord.top;width = box_Coord.width;height = box_Coord.height;
-            //g_print("xywh:(%f,%f,%f,%f) \n",left,top,width,height);
-            xyxy det_boxe = xywh2xyxy(left,top,width,height);
-            //g_print("det_boxe:(%f,%f,%f,%f) \n",det_boxe.x1,det_boxe.y1,det_boxe.x2,det_boxe.y2);
-
-            int hh=0; //用于判断是不是新蹦出来的目标
-            for (int i =0;i < Front_frame_det_number;i++)
+            if (obj_meta->class_id == 2) //2为车
             {
-              linshi_data Front_det_boxe_xy=boat_Front_chuanti_queding[i];
-              //g_print("IOU:%f \n",IOU(det_boxe.x1,det_boxe.y1,det_boxe.x2,det_boxe.y2,Front_det_boxe_xy.x1,Front_det_boxe_xy.y1,Front_det_boxe_xy.x2,Front_det_boxe_xy.y2));
-              //计算IOU
-              if (IOU(det_boxe.x1,det_boxe.y1,det_boxe.x2,det_boxe.y2,Front_det_boxe_xy.x1,Front_det_boxe_xy.y1,Front_det_boxe_xy.x2,Front_det_boxe_xy.y2) > 0.5)
+              g_print("obj_meta:%d \n",obj_meta->class_id);
+              NvDsComp_BboxInfo boxInfo;
+              boxInfo = obj_meta->detector_bbox_info;
+              NvBbox_Coords box_Coord;
+              box_Coord = boxInfo.org_bbox_coords;
+              float left,top,width,height;
+              left = box_Coord.left;top = box_Coord.top;width = box_Coord.width;height = box_Coord.height;
+              //g_print("xywh:(%f,%f,%f,%f) \n",left,top,width,height);
+              xyxy det_boxe = xywh2xyxy(left,top,width,height);
+              //g_print("det_boxe:(%f,%f,%f,%f) \n",det_boxe.x1,det_boxe.y1,det_boxe.x2,det_boxe.y2);
+
+              int hh=0; //用于判断是不是新蹦出来的目标
+              for (int i =0;i < Front_frame_det_number;i++)
               {
-                //更新检查框的位置 
-                Front_det_boxe_xy.x1=det_boxe.x1;
-                Front_det_boxe_xy.y1=det_boxe.y1;
-                Front_det_boxe_xy.x2=det_boxe.x2;
-                Front_det_boxe_xy.y2=det_boxe.y2;
-                hh = 1;
-                //加入中心的的坐标，且防止局部往回走
+                linshi_data Front_det_boxe_xy=boat_Front_chuanti_queding[i];
+                //g_print("IOU:%f \n",IOU(det_boxe.x1,det_boxe.y1,det_boxe.x2,det_boxe.y2,Front_det_boxe_xy.x1,Front_det_boxe_xy.y1,Front_det_boxe_xy.x2,Front_det_boxe_xy.y2));
+                //计算IOU
+                if (IOU(det_boxe.x1,det_boxe.y1,det_boxe.x2,det_boxe.y2,Front_det_boxe_xy.x1,Front_det_boxe_xy.y1,Front_det_boxe_xy.x2,Front_det_boxe_xy.y2) > 0.5)
+                {
+                  //更新检查框的位置 
+                  Front_det_boxe_xy.x1=det_boxe.x1;
+                  Front_det_boxe_xy.y1=det_boxe.y1;
+                  Front_det_boxe_xy.x2=det_boxe.x2;
+                  Front_det_boxe_xy.y2=det_boxe.y2;
+                  hh = 1;
+                  //加入中心的的坐标，且防止局部往回走 
+                  //获取框的中心点坐标 
+                  float x,y;
+                  x=(det_boxe.x1+det_boxe.x2)/2;
+                  y=(det_boxe.y1+det_boxe.y2)/2;
+                  if (Front_det_boxe_xy.direction ==0) //向下走
+                  {
+                    if (Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-1] > y)
+                    {
+                      //g_print("center_coord_length1:%d \n",Front_det_boxe_xy.center_coord_length);
+                      Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length] = Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-2];
+                      Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length+1] = Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-1];
+                      Front_det_boxe_xy.center_coord_length = Front_det_boxe_xy.center_coord_length + 2;
+                    }
+                    else
+                    {
+                      //g_print("center_coord_length2:%d \n",Front_det_boxe_xy.center_coord_length);
+                      Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length] = x;
+                      Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length+1] = y;
+                      Front_det_boxe_xy.center_coord_length = Front_det_boxe_xy.center_coord_length + 2;
+                    }
+                  }
+                  else //向上走
+                  {
+                    if (Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-1] < y)
+                    {
+                      //g_print("center_coord_length3:%d \n",Front_det_boxe_xy.center_coord_length);
+                      Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length] = Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-2];
+                      Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length+1] = Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-1];
+                      Front_det_boxe_xy.center_coord_length = Front_det_boxe_xy.center_coord_length + 2;
+                    }
+                    else
+                    {
+                      //g_print("center_coord_length4:%d \n",Front_det_boxe_xy.center_coord_length);
+                      Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length] = x;
+                      Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length+1] = y;
+                      Front_det_boxe_xy.center_coord_length = Front_det_boxe_xy.center_coord_length + 2;
+                    }
+                  }
+                  //g_print("here \n");
+                  g_print("det_boxe_number:%d \n",det_boxe_number);
+                  Front_det_boxes[det_boxe_number] = Front_det_boxe_xy;
+                  det_boxe_number = det_boxe_number + 1;
+                 }
+
+               }
+              if (hh == 0)
+              {
                 //获取框的中心点坐标
                 float x,y;
                 x=(det_boxe.x1+det_boxe.x2)/2;
                 y=(det_boxe.y1+det_boxe.y2)/2;
-                if (Front_det_boxe_xy.direction ==0) //向右走
+                linshi_data ss={0};
+
+                if (y < jishu_line)
                 {
-                  if (Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-2] > x)
-                  {
-                    //g_print("center_coord_length1:%d \n",Front_det_boxe_xy.center_coord_length);
-                    Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length] = Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-2];
-                    Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length+1] = Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-1];
-                    Front_det_boxe_xy.center_coord_length = Front_det_boxe_xy.center_coord_length + 2;
-                  }
-                  else
-                  {
-                    //g_print("center_coord_length2:%d \n",Front_det_boxe_xy.center_coord_length);
-                    Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length] = x;
-                    Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length+1] = y;
-                    Front_det_boxe_xy.center_coord_length = Front_det_boxe_xy.center_coord_length + 2;
-                  }
+                  //g_print("forward right \n");
+                  ss.x1 = det_boxe.x1;
+                  ss.y1 = det_boxe.y1;
+                  ss.x2 = det_boxe.x2;
+                  ss.y2 = det_boxe.y2;
+                  ss.direction = 0; //代表向下
+                  ss.center_coord[0] = x;
+                  ss.center_coord[1] = y;
+                  ss.center_coord_length = 2;
                 }
-                else //向左走
+                else
                 {
-                  if (Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-2] < x)
-                  {
-                    //g_print("center_coord_length3:%d \n",Front_det_boxe_xy.center_coord_length);
-                    Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length] = Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-2];
-                    Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length+1] = Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length-1];
-                    Front_det_boxe_xy.center_coord_length = Front_det_boxe_xy.center_coord_length + 2;
-                  }
-                  else
-                  {
-                    //g_print("center_coord_length4:%d \n",Front_det_boxe_xy.center_coord_length);
-                    Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length] = x;
-                    Front_det_boxe_xy.center_coord[Front_det_boxe_xy.center_coord_length+1] = y;
-                    Front_det_boxe_xy.center_coord_length = Front_det_boxe_xy.center_coord_length + 2;
-                  }
+                  //g_print("forward left \n");
+                  ss.x1 = det_boxe.x1;
+                  ss.y1 = det_boxe.y1;
+                  ss.x2 = det_boxe.x2;
+                  ss.y2 = det_boxe.y2;
+                  ss.direction = 1; //代表向上
+                  ss.center_coord[0] = x;
+                  ss.center_coord[1] = y;
+                  ss.center_coord_length = 2;
                 }
-                //g_print("here \n");
-                g_print("det_boxe_number:%d \n",det_boxe_number);
-                Front_det_boxes[det_boxe_number] = Front_det_boxe_xy;
+                Front_det_boxes[det_boxe_number] = ss;
                 det_boxe_number = det_boxe_number + 1;
               }
-
             }
+            
             //g_print("hh:%d \n",hh);
-            if (hh == 0)
-            {
-              //获取框的中心点坐标
-              float x,y;
-              x=(det_boxe.x1+det_boxe.x2)/2;
-              y=(det_boxe.y1+det_boxe.y2)/2;
-              linshi_data ss={0};
-
-              if (x < jishu_line)
-              {
-                //g_print("forward right \n");
-                ss.x1 = det_boxe.x1;
-                ss.y1 = det_boxe.y1;
-                ss.x2 = det_boxe.x2;
-                ss.y2 = det_boxe.y2;
-                ss.direction = 0; //代表向右
-                ss.center_coord[0] = x;
-                ss.center_coord[1] = y;
-                ss.center_coord_length = 2;
-              }
-              else
-              {
-                //g_print("forward left \n");
-                ss.x1 = det_boxe.x1;
-                ss.y1 = det_boxe.y1;
-                ss.x2 = det_boxe.x2;
-                ss.y2 = det_boxe.y2;
-                ss.direction = 1; //代表向左
-                ss.center_coord[0] = x;
-                ss.center_coord[1] = y;
-                ss.center_coord_length = 2;
-              }
-              Front_det_boxes[det_boxe_number] = ss;
-              det_boxe_number = det_boxe_number + 1;
-            }
           }
         }
         memcpy(boat_Front_chuanti_queding,Front_det_boxes,sizeof(Front_det_boxes));
@@ -350,7 +363,7 @@ tiler_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
         {
           linshi_data boat_counts_frame = boat_Front_chuanti_queding[i];
           g_print("center_coord_length:%d \n",boat_counts_frame.center_coord_length);
-          if (boat_counts_frame.center_coord_length >= 6)
+          if (boat_counts_frame.center_coord_length >= 4)
           {
             float center_x1,center_y1,center_x2,center_y2;
             center_x1 = boat_counts_frame.center_coord[boat_counts_frame.center_coord_length-2];
@@ -358,16 +371,16 @@ tiler_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
             center_x2 = boat_counts_frame.center_coord[boat_counts_frame.center_coord_length-4];
             center_y2 = boat_counts_frame.center_coord[boat_counts_frame.center_coord_length-3];
             //进入的船舶数
-            if ((center_x1 > jishu_line) && (center_x2 <= jishu_line))
+            if ((center_y1 > jishu_line) && (center_y2 <= jishu_line))
             {
-              into_counts = into_counts + 1;
+              downward_counts = downward_counts + 1;
               //获取时间，存入文件
 
             }
             //出去的船舶数
-            if ((center_x1 < jishu_line) && (center_x2 >= jishu_line))
+            if ((center_y1 < jishu_line) && (center_y2 >= jishu_line))
             {
-              out_counts = out_counts + 1;
+              upward_counts = upward_counts + 1;
             }
           }
         }
@@ -378,8 +391,8 @@ tiler_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
         display_meta->num_labels = 1;
         txt_params->display_text = g_malloc0 (MAX_DISPLAY_LEN);
         int offset = 0;
-        offset = snprintf(txt_params->display_text, MAX_DISPLAY_LEN, "into_numbers= %d ", into_counts);
-        offset = snprintf(txt_params->display_text + offset , MAX_DISPLAY_LEN, "go_out_numbers = %d ", out_counts);
+        offset = snprintf(txt_params->display_text, MAX_DISPLAY_LEN, "downward_counts= %d \n", downward_counts);
+        offset = snprintf(txt_params->display_text + offset , MAX_DISPLAY_LEN, "upward_counts = %d ", upward_counts);
         txt_params->x_offset = 30;
         txt_params->y_offset = 30;
 
@@ -401,10 +414,10 @@ tiler_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
         //画线
         NvOSD_LineParams *line_params = &display_meta -> line_params[0];
         display_meta->num_lines = 1;
-        line_params -> x1 = jishu_line;
-        line_params -> y1 = 0;
-        line_params -> x2 = jishu_line;
-        line_params -> y2 = y_coord;
+        line_params -> x1 = 0;
+        line_params -> y1 = jishu_line;
+        line_params -> x2 = x_coord;
+        line_params -> y2 = jishu_line;
         line_params -> line_width = 5;
         line_params -> line_color.red = 0.0;
         line_params -> line_color.green = 1.0;
