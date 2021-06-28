@@ -1,5 +1,5 @@
 # 简介
-用deepstream-test3跑yolov5，并对检测目标进行流量统计
+用deepstream-test3跑yolov5，并对小汽车(car)进行流量统计
 # 注意
 这个程序只适用于Nvidia jetson盒子，并且在使用之前需要进行编译。
 # 效果展示
