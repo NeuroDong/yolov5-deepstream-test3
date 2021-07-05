@@ -17,5 +17,5 @@ git clone https://github.com/dongdongdong1217/yolov5-deepstream-test3.git
 cd yolov5-deepstream-test3/
 make
 //下面这两个视频路径要根据具体的路径进行更改
-LD_PRELOAD=./libmyplugin.so ./deepstream-test3-app file:///home/ubuntu/video1.mp4 或者LD_PRELOAD=./libmyplugin.so ./deepstream-test3-app rtsp://127.0.0.1/video2
+LD_PRELOAD=./libmyplugins.so ./deepstream-test3-app file:///home/ubuntu/video1.mp4 或者LD_PRELOAD=./libmyplugins.so ./deepstream-test3-app rtsp://127.0.0.1/video2
 
