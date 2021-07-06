@@ -2,6 +2,8 @@
 用deepstream-test3跑yolov5，并对小汽车(car)进行流量统计
 # 注意
 这个程序只适用于Nvidia jetson盒子，并且在使用之前需要进行编译。
+deepstream版本：5.0
+
 # 效果展示
 见https://www.bilibili.com/video/BV1Xh41187tQ?from=search&seid=15658977398405425191
 # 使用教程
