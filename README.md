@@ -5,6 +5,8 @@
 
 deepstream版本：5.0
 
+YoloV5版本：5.0
+
 首先，请保证你是jetson上进行编译的，然后请保证你的jetson安装了deepstream，其次，要把这个这个项目和deepstream里面的test例子项目放在同一个文件下，然后进行编译。
 
 # 效果展示
