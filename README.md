@@ -25,7 +25,7 @@ cd yolov5-deepstream-test3/
 make
 //下面这两个视频路径要根据具体的路径进行更改
 LD_PRELOAD=./libmyplugins.so ./deepstream-test3-app file:///home/ubuntu/video1.mp4 或者LD_PRELOAD=./libmyplugins.so ./deepstream-test3-app rtsp://127.0.0.1/video2
-
+'''
 
 # 说明
 这是本人本科期间做的一个项目，当时学识有限，可能有些代码不是最高效的，但是保证能跑通且达到视频中的效果，仅供大家参考。
